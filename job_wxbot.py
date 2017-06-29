@@ -27,6 +27,7 @@ class MyWXBot(WXBot):
     # 运行微信网页版
     def run_wx(self):
         self.DEBUG = True
+
         if 'Linux' in platform.platform():
             self.conf['qr'] = 'tty'
         else:
@@ -43,11 +44,13 @@ class MyWXBot(WXBot):
                 continue
 
             job = red.lpop('job')
+
             if job == None:
                 time.sleep(1)
                 continue
 
             utils.log('pop job:%s' % job)
+            print 'platform:', platform
 
             try:
                 param = json.loads(job)
@@ -374,7 +377,8 @@ class MyWXBot(WXBot):
             if res == None:
                 continue
 
-            city_id = res[0]
+            city_id = res[1]
+            print 'res1===========>',res[1]
             for query in querys.split(','):
                 param = {
                     'city_id': city_id,
@@ -385,6 +389,7 @@ class MyWXBot(WXBot):
 
                 boss = Boss()
                 job_list = boss.start_request(param)
+                print 'joblist===========>',job_list
                 if job_list == None:
                     self.send_msg_by_uid('Boss 直聘，抓取数据异常 city:%s query:%s' % (city, query))
                 elif len(job_list) == 0:
@@ -578,6 +583,16 @@ def init():
         "PRIMARY KEY(id)"
         ") ENGINE=InnoDB".format(config.user_query_table))
     sql.create_table(command)
+    
+    # 创建 boss 城市列表
+    command = (
+        "CREATE TABLE IF NOT EXISTS {} ("
+        "`id` INT(12) NOT NULL AUTO_INCREMENT UNIQUE,"
+        "`city_id` INT(10) NOT NULL UNIQUE,"
+        "`name` CHAR(20) DEFAULT NULL,"
+        "PRIMARY KEY(id)"
+        ") ENGINE=InnoDB".format(config.boss_city_id_table))
+    sql.create_table(command)
 
     # 创建 boss 直聘平台工作信息表
     command = (
@@ -668,10 +683,10 @@ if __name__ == '__main__':
     t1 = threading.Thread(target = wx.run_wx)
     t2 = threading.Thread(target = wx.user_query_job)
     t3 = threading.Thread(target = wx.crawl_boss_job)
-    t4 = threading.Thread(target = wx.crawl_lagou_job)
-    t5 = threading.Thread(target = wx.crawl_liepin_job)
+    #t4 = threading.Thread(target = wx.crawl_lagou_job)
+    #t5 = threading.Thread(target = wx.crawl_liepin_job)
     t1.start()
     t2.start()
     t3.start()
-    t4.start()
-    t5.start()
+    #t4.start()
+    #t5.start()
